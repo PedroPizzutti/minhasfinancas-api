@@ -4,23 +4,23 @@ import com.pizzutti.minhasfinancas.api.dto.UsuarioDTO;
 import com.pizzutti.minhasfinancas.exception.ErroAutenticacao;
 import com.pizzutti.minhasfinancas.exception.RegraNegocioException;
 import com.pizzutti.minhasfinancas.model.entity.Usuario;
+import com.pizzutti.minhasfinancas.service.LancamentoService;
 import com.pizzutti.minhasfinancas.service.UsuarioService;
+import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
+
+import java.math.BigDecimal;
+import java.util.Optional;
 
 @RestController
 @RequestMapping("/api/usuarios")
+@RequiredArgsConstructor
 public class UsuarioResource {
 
-    private UsuarioService service;
-
-    public UsuarioResource (UsuarioService service) {
-        this.service = service;
-    }
+    private final UsuarioService service;
+    private final LancamentoService lancamentoService;
 
     @PostMapping("/autenticar")
     public ResponseEntity autenticar (@RequestBody UsuarioDTO dto) {
@@ -59,5 +59,20 @@ public class UsuarioResource {
             return ResponseEntity.badRequest().body(e.getMessage());
 
         }
+    }
+
+    @GetMapping("{id}/saldo")
+    public ResponseEntity obterSaldo(@PathVariable Long id) {
+
+        Optional<Usuario> usuario = service.obterPorId(id);
+
+        if(!usuario.isPresent()) {
+            return new ResponseEntity(HttpStatus.NOT_FOUND);
+        }
+
+        BigDecimal saldo = lancamentoService.obterSaldoPorUsuario(id);
+
+        return ResponseEntity.ok(saldo);
+
     }
 }

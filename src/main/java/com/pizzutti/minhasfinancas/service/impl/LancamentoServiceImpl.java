@@ -3,6 +3,7 @@ package com.pizzutti.minhasfinancas.service.impl;
 import com.pizzutti.minhasfinancas.exception.RegraNegocioException;
 import com.pizzutti.minhasfinancas.model.entity.Lancamento;
 import com.pizzutti.minhasfinancas.model.enums.StatusLancamento;
+import com.pizzutti.minhasfinancas.model.enums.TipoLancamento;
 import com.pizzutti.minhasfinancas.model.repository.LancamentoRepository;
 import com.pizzutti.minhasfinancas.service.LancamentoService;
 import org.springframework.data.domain.Example;
@@ -13,6 +14,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
 import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
 
 @Service
 public class LancamentoServiceImpl implements LancamentoService {
@@ -28,6 +30,7 @@ public class LancamentoServiceImpl implements LancamentoService {
     public Lancamento salvar(Lancamento lancamento) {
 
         validar(lancamento);
+        lancamento.setStatus(StatusLancamento.PENDENTE);
         return repository.save(lancamento);
 
     }
@@ -38,7 +41,6 @@ public class LancamentoServiceImpl implements LancamentoService {
 
         Objects.requireNonNull(lancamento.getId());
         validar(lancamento);
-        lancamento.setStatus(StatusLancamento.PENDENTE);
         return repository.save(lancamento);
 
     }
@@ -78,7 +80,7 @@ public class LancamentoServiceImpl implements LancamentoService {
     @Override
     public void validar(Lancamento lancamento) {
 
-        if(lancamento.getDescricao() == null || lancamento.getDescricao().trim().endsWith("")) {
+        if(lancamento.getDescricao() == null || lancamento.getDescricao().trim().equals("")) {
 
             throw new RegraNegocioException("Informe uma Descrição válida.");
 
@@ -114,6 +116,35 @@ public class LancamentoServiceImpl implements LancamentoService {
 
         }
 
+
+    }
+
+    @Override
+    public Optional<Lancamento> obterPorId(Long id) {
+
+        return repository.findById(id);
+
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public BigDecimal obterSaldoPorUsuario(Long id) {
+
+        BigDecimal receitas =
+                repository.obterSaldoPorTipoLancamentoEUsuario(id, TipoLancamento.RECEITA);
+
+        BigDecimal despesas =
+                repository.obterSaldoPorTipoLancamentoEUsuario(id, TipoLancamento.DESPESA);
+
+        if(receitas == null) {
+            receitas = BigDecimal.ZERO;
+        }
+
+        if(despesas == null) {
+            despesas = BigDecimal.ZERO;
+        }
+
+        return receitas.subtract(despesas);
 
     }
 }
