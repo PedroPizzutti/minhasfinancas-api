@@ -115,8 +115,6 @@ public class LancamentoServiceImpl implements LancamentoService {
             throw new RegraNegocioException("Informe um tipo de lançamento.");
 
         }
-
-
     }
 
     @Override
